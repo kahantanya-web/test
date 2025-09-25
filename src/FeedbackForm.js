@@ -1,8 +1,42 @@
 import  { useState } from 'react';
 import * as XLSX from 'xlsx';
+import { analyzeFeedbackService } from './services/aiService';
 
 // We'll use questions from the text file instead of default questions
 function FeedbackForm({ onFeedback }) {
+  // Move AI analysis logic to a function
+  // Service-based AI analysis
+  const analyzeFeedbackWithAI = async () => {
+    setIsAnalyzing(true);
+    setAiAnalysis('');
+    setAnalysisError('');
+    try {
+      // Prepare feedback text for AI
+      const feedbackText = [
+        `User: Current User`,
+        `\nSpecialist Feedback:`,
+        ...feedbackData.specialistAnswers?.map(item => `Q: ${item.question}\nA: ${item.answer}`),
+        `\nNewcomer Feedback:`,
+        ...feedbackData.newcomerAnswers?.map(item => `Q: ${item.question}\nA: ${item.answer}`)
+      ].join('\n');
+
+      // AI prompt
+      const prompt = `Analyze the following onboarding feedback and provide a short summary (about 50 words) including:\n- Overall sentiment (positive/negative/mixed)\n- Key strengths\n- Areas for improvement\n- Action items.\n\nFeedback:\n${feedbackText}`;
+
+      // Call the service function
+      const result = await analyzeFeedbackService(prompt);
+      setAiAnalysis(result.analysis || result.choices?.[0]?.message?.content || 'No analysis available.');
+    } catch (err) {
+      setAnalysisError(err.message || 'Failed to analyze feedback.');
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+  // AI analysis states
+  const [feedbackData, setFeedbackData] = useState(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [aiAnalysis, setAiAnalysis] = useState('');
+  const [analysisError, setAnalysisError] = useState('');
   const [newcomerFeedbackFile, setNewcomerFeedbackFile] = useState(null);
   const [specialistFeedbackFile, setSpecialistFeedbackFile] = useState(null);
   const [questionsFile, setQuestionsFile] = useState(null);
@@ -292,12 +326,10 @@ function FeedbackForm({ onFeedback }) {
           question,
           answer: specialistData[question] || ''
         }));
-        
         const newcomerAnswers = parsedQuestions.newcomer.map(question => ({
           question,
           answer: newcomerData[question] || ''
         }));
-        
         // Create the feedback structure with section titles
         const feedback = {
           userName,
@@ -305,15 +337,13 @@ function FeedbackForm({ onFeedback }) {
           specialistAnswers,
           newcomerTitle: "Newcomer's feedback after onboarding:",
           newcomerAnswers,
-          // Keep the answers array for backward compatibility
           answers: [
             ...specialistAnswers,
             ...newcomerAnswers
           ]
         };
-        
         setError('');
-        // Pass a copy flag to the onFeedback function
+        setFeedbackData(feedback); // Store for AI analysis
         onFeedback(feedback, '', false);
       })
       .catch(err => {
@@ -386,6 +416,25 @@ function FeedbackForm({ onFeedback }) {
         </button>
         {error && <div className="text-red-500 mt-4">{error}</div>}
       </form>
+
+      {feedbackData && (
+        <div className="mt-6 bg-white p-6 rounded-lg shadow-md">
+          <h2 className="text-xl font-semibold mb-4">AI Feedback Analysis</h2>
+          <button
+            onClick={analyzeFeedbackWithAI}
+            disabled={isAnalyzing}
+            className={`mb-4 ${isAnalyzing ? 'bg-gray-400' : 'bg-green-500 hover:bg-green-600'} text-white font-semibold py-2 px-6 rounded shadow transition duration-150`}
+          >
+            {isAnalyzing ? 'Analyzing...' : 'Analyze Feedback with AI'}
+          </button>
+          {analysisError && <div className="text-red-500 mb-4">{analysisError}</div>}
+          {aiAnalysis && (
+            <div className="mt-4 p-4 bg-gray-50 rounded-md">
+              <pre className="whitespace-pre-wrap text-sm">{aiAnalysis}</pre>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
