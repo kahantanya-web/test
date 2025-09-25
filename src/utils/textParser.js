@@ -101,22 +101,10 @@ export const parseQuestionsFromText = (text) => {
     return { specialist: [], newcomer: [] };
   }
   
-  console.log("Full text content (first 500 chars):", text.substring(0, 500));
-  
   const normalizedText = normalizeText(text);
   const simplifiedText = normalizedText.toLowerCase().replace(/\s+/g, ' ');
-  
-  console.log("Normalized text (first 200 chars):", simplifiedText.substring(0, 200));
-  
+   
   const { specialistIndex, newcomerIndex } = findSectionIndices(simplifiedText);
-  
-  // Log findings
-  if (specialistIndex !== -1) {
-    console.log(`Found specialist section at index ${specialistIndex}`);
-  }
-  if (newcomerIndex !== -1) {
-    console.log(`Found newcomer section at index ${newcomerIndex}`);
-  }
   
   const specialistQuestions = [];
   const newcomerQuestions = [];
@@ -130,14 +118,13 @@ export const parseQuestionsFromText = (text) => {
       specialistSection = normalizedText.substring(specialistIndex);
     }
     
-    console.log("Specialist section (first 200 chars):", specialistSection.substring(0, 200));
     specialistQuestions.push(...extractQuestionsFromSection(specialistSection));
   }
   
   // Extract newcomer questions
   if (newcomerIndex !== -1) {
     const newcomerSection = normalizedText.substring(newcomerIndex);
-    console.log("Newcomer section (first 200 chars):", newcomerSection.substring(0, 200));
+    
     newcomerQuestions.push(...extractQuestionsFromSection(newcomerSection));
   }
   

@@ -40,9 +40,7 @@ function FeedbackForm({ onFeedback }) {
     const file = e.target.files[0];
     setQuestionsFile(file);
     clearFieldError('questionsFile');
-
-    console.log("Selected questions file:", file);
-    
+  
     if (file) {
       processQuestionsFile(file);
     }
@@ -54,7 +52,6 @@ function FeedbackForm({ onFeedback }) {
       const reader = new FileReader();
       reader.onload = (evt) => {
         const content = evt.target.result;
-        console.log("Text file content detected");
         const extractedQuestions = parseQuestionsFromText(content);
         setParsedQuestions(extractedQuestions);
         
