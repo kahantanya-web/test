@@ -4,11 +4,92 @@ import { analyzeFeedbackService } from './services/aiService';
 
 // We'll use questions from the text file instead of default questions
 function FeedbackForm({ onFeedback }) {
+  // Format structured AI analysis
+  const renderStructuredAnalysis = (analysis) => {
+    return (
+      <div className="space-y-6">
+        <div className="border-l-4 border-green-500 pl-4">
+          <h4 className="font-semibold text-gray-800 mb-2 flex items-center">
+            <svg className="w-5 h-5 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            Overall Sentiment
+          </h4>
+          <p className="text-gray-700 leading-relaxed">{analysis.overallSentiment}</p>
+        </div>
+
+        <div className="border-l-4 border-blue-500 pl-4">
+          <h4 className="font-semibold text-gray-800 mb-2 flex items-center">
+            <svg className="w-5 h-5 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+            Key Strengths
+          </h4>
+          <p className="text-gray-700 leading-relaxed">{analysis.keyStrengths}</p>
+        </div>
+
+        <div className="border-l-4 border-yellow-500 pl-4">
+          <h4 className="font-semibold text-gray-800 mb-2 flex items-center">
+            <svg className="w-5 h-5 mr-2 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+            Areas for Improvement
+          </h4>
+          <p className="text-gray-700 leading-relaxed">{analysis.areasForImprovement}</p>
+        </div>
+
+        <div className="border-l-4 border-purple-500 pl-4">
+          <h4 className="font-semibold text-gray-800 mb-2 flex items-center">
+            <svg className="w-5 h-5 mr-2 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            </svg>
+            Action Items
+          </h4>
+          <p className="text-gray-700 leading-relaxed">{analysis.actionItems}</p>
+        </div>
+      </div>
+    );
+  };
+
+  // Format AI analysis for better readability (fallback for non-JSON responses)
+  const formatAIAnalysis = (analysis) => {
+    const lines = analysis.split('\n').filter(line => line.trim());
+    
+    return (
+      <div className="space-y-4">
+        {lines.map((line, index) => {
+          const trimmed = line.trim();
+          
+          // Check if it's a section header (contains colon and starts with capital letter)
+          if (trimmed.includes(':') && /^[A-Z]/.test(trimmed)) {
+            const [label, ...contentParts] = trimmed.split(':');
+            const content = contentParts.join(':').trim();
+            
+            return (
+              <div key={index} className="border-l-4 border-blue-500 pl-4">
+                <h4 className="font-semibold text-gray-800 mb-1">{label}:</h4>
+                {content && <p className="text-gray-700">{content}</p>}
+              </div>
+            );
+          }
+          
+          // Regular text
+          return (
+            <p key={index} className="text-gray-700 leading-relaxed">
+              {trimmed}
+            </p>
+          );
+        })}
+      </div>
+    );
+  };
+
   // Move AI analysis logic to a function
   // Service-based AI analysis
   const analyzeFeedbackWithAI = async () => {
     setIsAnalyzing(true);
     setAiAnalysis('');
+    setStructuredAnalysis(null);
     setAnalysisError('');
     try {
       // Prepare feedback text for AI
@@ -21,11 +102,47 @@ function FeedbackForm({ onFeedback }) {
       ].join('\n');
 
       // AI prompt
-      const prompt = `Analyze the following onboarding feedback and provide a short summary (about 50 words) including:\n- Overall sentiment (positive/negative/mixed)\n- Key strengths\n- Areas for improvement\n- Action items.\n\nFeedback:\n${feedbackText}`;
+      const prompt = `Analyze the following onboarding feedback and return a JSON response with exactly these 4 properties:
+
+{
+  "overallSentiment": "Brief description of whether the feedback is positive, negative, or mixed (1-2 sentences)",
+  "keyStrengths": "Main positive aspects and what's working well (2-3 key points)",
+  "areasForImprovement": "Specific areas that need attention or enhancement (2-3 key areas)",
+  "actionItems": "Concrete, actionable recommendations based on the feedback (2-3 specific suggestions)"
+}
+
+Important: 
+- Return ONLY valid JSON, no additional text or formatting
+- Keep each property value concise but informative
+- Ensure the JSON is properly formatted and parseable
+
+Feedback to analyze:
+${feedbackText}`;
 
       // Call the service function
       const result = await analyzeFeedbackService(prompt);
-      setAiAnalysis(result.analysis || result.choices?.[0]?.message?.content || 'No analysis available.');
+      const analysisText = result.analysis || result.choices?.[0]?.message?.content || 'No analysis available.';
+      
+      // Try to parse as JSON first
+      try {
+        const jsonAnalysis = JSON.parse(analysisText);
+        
+        // Validate that it has the expected properties
+        if (jsonAnalysis.overallSentiment && jsonAnalysis.keyStrengths && 
+            jsonAnalysis.areasForImprovement && jsonAnalysis.actionItems) {
+          setStructuredAnalysis(jsonAnalysis);
+          setAiAnalysis(''); // Clear the raw analysis when we have structured data
+        } else {
+          // If JSON doesn't have expected structure, fall back to raw text
+          setAiAnalysis(analysisText);
+          setStructuredAnalysis(null);
+        }
+      } catch (parseError) {
+        // If JSON parsing fails, use as raw text
+        console.log('Failed to parse JSON, using raw text:', parseError.message);
+        setAiAnalysis(analysisText);
+        setStructuredAnalysis(null);
+      }
     } catch (err) {
       setAnalysisError(err.message || 'Failed to analyze feedback.');
     } finally {
@@ -36,6 +153,7 @@ function FeedbackForm({ onFeedback }) {
   const [feedbackData, setFeedbackData] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [aiAnalysis, setAiAnalysis] = useState('');
+  const [structuredAnalysis, setStructuredAnalysis] = useState(null);
   const [analysisError, setAnalysisError] = useState('');
   const [newcomerFeedbackFile, setNewcomerFeedbackFile] = useState(null);
   const [specialistFeedbackFile, setSpecialistFeedbackFile] = useState(null);
@@ -428,9 +546,25 @@ function FeedbackForm({ onFeedback }) {
             {isAnalyzing ? 'Analyzing...' : 'Analyze Feedback with AI'}
           </button>
           {analysisError && <div className="text-red-500 mb-4">{analysisError}</div>}
-          {aiAnalysis && (
+          
+          {/* Display structured analysis if available */}
+          {structuredAnalysis && (
+            <div className="mt-4 p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                <svg className="w-6 h-6 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                AI Analysis Results
+              </h3>
+              {renderStructuredAnalysis(structuredAnalysis)}
+            </div>
+          )}
+          
+          {/* Fallback to formatted text display */}
+          {!structuredAnalysis && aiAnalysis && (
             <div className="mt-4 p-4 bg-gray-50 rounded-md">
-              <pre className="whitespace-pre-wrap text-sm">{aiAnalysis}</pre>
+              <h3 className="text-lg font-semibold text-gray-900 mb-3">AI Analysis</h3>
+              {formatAIAnalysis(aiAnalysis)}
             </div>
           )}
         </div>

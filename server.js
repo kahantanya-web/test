@@ -6,6 +6,18 @@ require('dotenv').config();
 const app = express();
 app.use(bodyParser.json());
 
+// Add CORS middleware
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', 'http://localhost:3000');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(200);
+  } else {
+    next();
+  }
+});
+
 // Securely store your API key in .env
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 console.log(process.env.OPENAI_API_KEY)
