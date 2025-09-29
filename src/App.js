@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import FeedbackForm from './FeedbackForm';
-import FeedbackDisplay from './FeedbackDisplay';
-import ErrorAlert from './ErrorAlert';
+import FeedbackForm from './components/FeedbackForm';
+import FeedbackDisplay from './components/FeedbackDisplay';
+import ErrorAlert from './components/ErrorAlert';
 
 
 function App() {
