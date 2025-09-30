@@ -23,7 +23,9 @@
     "test:e2e:clean": "npx kill-port 3000 && playwright test",
     "mcp:server": "npx @playwright/mcp --host localhost --port 3001 --browser chrome --output-dir ./test-results/mcp-sessions --save-trace --save-video 1280x720",
     "mcp:debug": "npm-run-all --parallel start mcp:server",
-    "mcp:setup": "echo 'Starting MCP debugging session...' && mkdir -p test-results/mcp-sessions"
+    "mcp:setup": "echo 'Starting MCP debugging session...' && mkdir -p test-results/mcp-sessions",
+    "mcp:troubleshoot": "node scripts/troubleshoot-mcp.js",
+    "mcp:quick-start": "node scripts/quick-start-mcp.js"
   },
   "browserslist": {
     "production": [
@@ -49,6 +51,7 @@
     "kill-port": "^2.0.1",
     "npm-run-all": "^4.1.5",
     "postcss": "^8.5.6",
-    "tailwindcss": "^3.4.17"
+    "tailwindcss": "^3.4.17",
+    "wait-on": "^9.0.1"
   }
 }
