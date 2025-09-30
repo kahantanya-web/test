@@ -26,14 +26,28 @@ function FeedbackDisplay({ feedback }) {
       textToCopy += `A: ${item.answer || 'No answer provided'}\n\n`;
     });
 
-    navigator.clipboard.writeText(textToCopy.trim())
-      .then(() => {
+    try {
+      const writePromise = navigator.clipboard?.writeText(textToCopy.trim());
+      
+      if (writePromise && typeof writePromise.then === 'function') {
+        writePromise
+          .then(() => {
+            setIsCopied(true);
+            const timeoutId = setTimeout(() => setIsCopied(false), 2000); // Reset after 2 seconds
+            return timeoutId;
+          })
+          .catch(err => {
+            console.error('Failed to copy text: ', err);
+          });
+      } else {
+        // Fallback for environments where clipboard API doesn't return a Promise
         setIsCopied(true);
-        setTimeout(() => setIsCopied(false), 2000); // Reset after 2 seconds
-      })
-      .catch(err => {
-        console.error('Failed to copy text: ', err);
-      });
+        const timeoutId = setTimeout(() => setIsCopied(false), 2000);
+        return timeoutId;
+      }
+    } catch (err) {
+      console.error('Failed to copy text: ', err);
+    }
   };
 
   return (
