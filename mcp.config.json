@@ -2,10 +2,25 @@
   "mcpServers": {
     "playwright": {
       "command": "npx",
-      "args": ["@playwright/mcp"],
+      "args": [
+        "@playwright/mcp",
+        "--host", "localhost",
+        "--port", "3001",
+        "--browser", "chrome",
+        "--output-dir", "./test-results/mcp-sessions",
+        "--save-trace",
+        "--save-video", "1280x720",
+        "--viewport-size", "1280x720"
+      ],
       "env": {
-        "PLAYWRIGHT_BROWSERS_PATH": "0"
+        "PLAYWRIGHT_BROWSERS_PATH": "0",
+        "NODE_ENV": "development"
       }
     }
+  },
+  "aiDebugging": {
+    "serverUrl": "http://localhost:3001",
+    "appUrl": "http://localhost:3000",
+    "instructions": "Use this MCP server to debug the onboarding feedback UI app"
   }
 }

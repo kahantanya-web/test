@@ -21,7 +21,9 @@
     "test:e2e:ui": "playwright test --ui",
     "test:coverage": "react-scripts test --coverage --watchAll=false",
     "test:e2e:clean": "npx kill-port 3000 && playwright test",
-    "mcp:server": "npx @playwright/mcp"
+    "mcp:server": "npx @playwright/mcp --host localhost --port 3001 --browser chrome --output-dir ./test-results/mcp-sessions --save-trace --save-video 1280x720",
+    "mcp:debug": "npm-run-all --parallel start mcp:server",
+    "mcp:setup": "echo 'Starting MCP debugging session...' && mkdir -p test-results/mcp-sessions"
   },
   "browserslist": {
     "production": [
@@ -36,8 +38,8 @@
     ]
   },
   "devDependencies": {
-    "@playwright/test": "^1.55.0",
     "@playwright/mcp": "latest",
+    "@playwright/test": "^1.55.0",
     "@testing-library/jest-dom": "^6.8.0",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",
@@ -45,6 +47,7 @@
     "autoprefixer": "^10.4.21",
     "jest-environment-jsdom": "^30.1.2",
     "kill-port": "^2.0.1",
+    "npm-run-all": "^4.1.5",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.17"
   }
