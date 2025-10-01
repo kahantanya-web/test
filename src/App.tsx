@@ -4,11 +4,13 @@ import FeedbackDisplay from './FeedbackDisplay';
 import ErrorAlert from './ErrorAlert';
 
 
-function App() {
-  const [feedback, setFeedback] = useState(null);
-  const [error, setError] = useState('');
+import { Answer, Feedback } from "./types/feedback";
 
-  const handleFeedback = (result, errMsg) => {
+function App() {
+  const [feedback, setFeedback] = useState<Feedback | null>(null);
+  const [error, setError] = useState<string>('');
+
+  const handleFeedback = (result: Feedback | null, errMsg: string) => {
     setFeedback(result);
     setError(errMsg);
   };
@@ -19,7 +21,7 @@ function App() {
         <h2 className="text-2xl font-bold text-gray-800 mb-8 text-center">Onboarding Feedback Finder</h2>
         <FeedbackForm onFeedback={handleFeedback} />
         <ErrorAlert message={error} />
-        <FeedbackDisplay feedback={feedback} />
+        <FeedbackDisplay feedback={feedback ?? undefined} />
       </div>
     </div>
   );

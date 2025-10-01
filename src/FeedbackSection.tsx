@@ -1,4 +1,7 @@
-function FeedbackSection({ title, answers, sectionKey }) {
+
+import { Answer, FeedbackSectionProps } from "./types/feedback";
+
+function FeedbackSection({ title, answers, sectionKey }: FeedbackSectionProps) {
   if (!answers || answers.length === 0) {
     return null;
   }

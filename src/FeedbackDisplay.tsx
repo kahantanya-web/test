@@ -2,7 +2,14 @@ import { useState } from 'react';
 import FeedbackSection from './FeedbackSection';
 import CopyButton from './CopyButton';
 
-function FeedbackDisplay({ feedback }) {
+
+import { Answer, Feedback } from "./types/feedback";
+
+interface FeedbackDisplayProps {
+  feedback?: Feedback;
+}
+
+function FeedbackDisplay({ feedback }: FeedbackDisplayProps) {
   const [isCopied, setIsCopied] = useState(false);
 
   if (!feedback) return null;

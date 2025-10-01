@@ -1,33 +1,63 @@
 import  { useState } from 'react';
 import * as XLSX from 'xlsx';
 
-// We'll use questions from the text file instead of default questions
-function FeedbackForm({ onFeedback }) {
-  const [newcomerFeedbackFile, setNewcomerFeedbackFile] = useState(null);
-  const [specialistFeedbackFile, setSpecialistFeedbackFile] = useState(null);
-  const [questionsFile, setQuestionsFile] = useState(null);
-  const [parsedQuestions, setParsedQuestions] = useState({ specialist: [], newcomer: [] });
-  const [userName, setUserName] = useState('');
-  const [error, setError] = useState('');
-  const [validation, setValidation] = useState({ newcomerFile: '', specialistFile: '', name: '', questionsFile: '' });
-  const [touched, setTouched] = useState({ newcomerFile: false, specialistFile: false, name: false, questionsFile: false });
 
-  const handleNewcomerFileChange = (e) => {
-    setNewcomerFeedbackFile(e.target.files[0]);
+
+import { Answer, Feedback } from "./types/feedback";
+
+interface FeedbackFormProps {
+  onFeedback: (result: Feedback | null, errMsg: string) => void;
+}
+
+interface ParsedQuestions {
+  specialist: string[];
+  newcomer: string[];
+}
+
+interface ValidationState {
+  newcomerFile: string;
+  specialistFile: string;
+  name: string;
+  questionsFile: string;
+}
+
+interface TouchedState {
+  newcomerFile: boolean;
+  specialistFile: boolean;
+  name: boolean;
+  questionsFile: boolean;
+}
+
+function FeedbackForm({ onFeedback }: FeedbackFormProps) {
+  const [newcomerFeedbackFile, setNewcomerFeedbackFile] = useState<File | null>(null);
+  const [specialistFeedbackFile, setSpecialistFeedbackFile] = useState<File | null>(null);
+  const [questionsFile, setQuestionsFile] = useState<File | null>(null);
+  const [parsedQuestions, setParsedQuestions] = useState<ParsedQuestions>({ specialist: [], newcomer: [] });
+  const [userName, setUserName] = useState<string>('');
+  const [error, setError] = useState<string>('');
+  const [validation, setValidation] = useState<ValidationState>({ newcomerFile: '', specialistFile: '', name: '', questionsFile: '' });
+  const [touched, setTouched] = useState<TouchedState>({ newcomerFile: false, specialistFile: false, name: false, questionsFile: false });
+
+  const handleNewcomerFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setNewcomerFeedbackFile(e.target.files[0]);
+    }
     setTouched(t => ({ ...t, newcomerFile: true }));
     setValidation(v => ({ ...v, newcomerFile: '' }));
     setError('');
   };
 
-  const handleSpecialistFileChange = (e) => {
-    setSpecialistFeedbackFile(e.target.files[0]);
+  const handleSpecialistFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setSpecialistFeedbackFile(e.target.files[0]);
+    }
     setTouched(t => ({ ...t, specialistFile: true }));
     setValidation(v => ({ ...v, specialistFile: '' }));
     setError('');
   };
 
-  const handleQuestionsFileChange = (e) => {
-    const file = e.target.files[0];
+  const handleQuestionsFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files && e.target.files[0] ? e.target.files[0] : null;
     setQuestionsFile(file);
     setTouched(t => ({ ...t, questionsFile: true }));
     setValidation(v => ({ ...v, questionsFile: '' }));
@@ -40,8 +70,8 @@ function FeedbackForm({ onFeedback }) {
       if (file.type === 'text/plain') {
         // Handle plain text files
         const reader = new FileReader();
-        reader.onload = (evt) => {
-          const content = evt.target.result;
+        reader.onload = (evt: ProgressEvent<FileReader>) => {
+          const content = evt.target && typeof evt.target.result === 'string' ? evt.target.result : '';
           console.log("Text file content detected");
           const extractedQuestions = parseQuestionsFromText(content);
           setParsedQuestions(extractedQuestions);
@@ -70,7 +100,7 @@ function FeedbackForm({ onFeedback }) {
     }
   };
   
-  const parseQuestionsFromText = (text) => {
+  const parseQuestionsFromText = (text: string): ParsedQuestions => {
     // Additional check to detect binary content
     if (text.indexOf('PK') === 0 || text.indexOf('%PDF') === 0 || /[\x00-\x08\x0E-\x1F]/.test(text.substring(0, 100))) {
       console.error("Binary file content detected - cannot parse as text");
@@ -181,14 +211,14 @@ function FeedbackForm({ onFeedback }) {
     };
   };
 
-  const handleUserNameChange = (e) => {
+  const handleUserNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setUserName(e.target.value);
     setTouched(t => ({ ...t, name: true }));
     setValidation(v => ({ ...v, name: '' }));
     setError('');
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     let valid = true;
     let v = { newcomerFile: '', specialistFile: '', name: '', questionsFile: '' };
@@ -223,23 +253,27 @@ function FeedbackForm({ onFeedback }) {
     setTouched({ newcomerFile: true, specialistFile: true, name: true, questionsFile: true });
     if (!valid) return;
 
-    const processExcelFile = (file, options, fileType) => {
+  const processExcelFile = (file: File | null, options: { sheet: string; userNameColumn: string }, fileType: string): Promise<Record<string, string>> => {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
-        reader.onload = (evt) => {
+        reader.onload = (evt: ProgressEvent<FileReader>) => {
           try {
+            if (!evt.target || !(evt.target.result instanceof ArrayBuffer)) {
+              reject(`Error reading ${fileType} feedback file: invalid result type.`);
+              return;
+            }
             const data = new Uint8Array(evt.target.result);
             const workbook = XLSX.read(data, { type: 'array' });
 
             let sheetName = options.sheet;
             const worksheet = workbook.Sheets[sheetName];
-            
+
             if (!sheetName || !workbook.Sheets[sheetName]) {
               reject(`Could not find the required sheet in the ${fileType} feedback file.`);
               return;
             }
 
-            const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+            const jsonData = XLSX.utils.sheet_to_json<Record<string, string>>(worksheet, { defval: '' });
 
             if (jsonData.length === 0) {
               reject(`The sheet in the ${fileType} feedback file is empty.`);
@@ -249,7 +283,8 @@ function FeedbackForm({ onFeedback }) {
             let userNameColumn = options.userNameColumn;
             const headers = Object.keys(jsonData[0]);
 
-            const row = jsonData.find(r => 
+            const row = jsonData.find(r =>
+              typeof r[userNameColumn] === 'string' &&
               (r[userNameColumn] || '').trim().toLowerCase() === userName.trim().toLowerCase()
             );
 
@@ -257,14 +292,22 @@ function FeedbackForm({ onFeedback }) {
               reject(`User not found in ${fileType} feedback file.`);
               return;
             }
-            
+
             resolve(row);
           } catch (error) {
-            reject(`Error processing ${fileType} feedback file: ${error.message}`);
+            if (error instanceof Error) {
+              reject(`Error processing ${fileType} feedback file: ${error.message}`);
+            } else {
+              reject(`Error processing ${fileType} feedback file: unknown error`);
+            }
           }
         };
-        reader.onerror = () => reject(`Error reading ${fileType} feedback file`);
-        reader.readAsArrayBuffer(file);
+  reader.onerror = () => reject(`Error reading ${fileType} feedback file`);
+        if (file) {
+          reader.readAsArrayBuffer(file);
+        } else {
+          reject(`No file provided for ${fileType} feedback file.`);
+        }
       });
     };
 
@@ -290,31 +333,25 @@ function FeedbackForm({ onFeedback }) {
         // Process both sets of questions
         const specialistAnswers = parsedQuestions.specialist.map(question => ({
           question,
-          answer: specialistData[question] || ''
+          answer: (specialistData as Record<string, string>)[question] || ''
         }));
-        
+
         const newcomerAnswers = parsedQuestions.newcomer.map(question => ({
           question,
-          answer: newcomerData[question] || ''
+          answer: (newcomerData as Record<string, string>)[question] || ''
         }));
-        
+
         // Create the feedback structure with section titles
-        const feedback = {
+        const feedback: Feedback = {
           userName,
           specialistTitle: "Feedback after onboarding from the onboarding specialist:",
           specialistAnswers,
           newcomerTitle: "Newcomer's feedback after onboarding:",
-          newcomerAnswers,
-          // Keep the answers array for backward compatibility
-          answers: [
-            ...specialistAnswers,
-            ...newcomerAnswers
-          ]
+          newcomerAnswers
         };
-        
+
         setError('');
-        // Pass a copy flag to the onFeedback function
-        onFeedback(feedback, '', false);
+        onFeedback(feedback, '');
       })
       .catch(err => {
         setError(err.toString());

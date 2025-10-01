@@ -1,4 +1,10 @@
-function CopyButton({ onClick, isCopied, title }) {
+interface CopyButtonProps {
+  onClick: () => void;
+  isCopied: boolean;
+  title?: string;
+}
+
+function CopyButton({ onClick, isCopied, title }: CopyButtonProps) {
   return (
     <button
       type="button"
