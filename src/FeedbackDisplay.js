@@ -1,32 +1,19 @@
 import { useState } from 'react';
 import FeedbackSection from './FeedbackSection';
 import CopyButton from './CopyButton';
+import { createFeedbackText, copyToClipboard } from './utils/clipboard';
 
 function FeedbackDisplay({ feedback }) {
   const [isCopied, setIsCopied] = useState(false);
 
   if (!feedback) return null;
 
-  const copyToClipboard = () => {
+  const handleCopyToClipboard = () => {
     if (!feedback) return;
 
-    const { userName, specialistTitle, specialistAnswers, newcomerTitle, newcomerAnswers } = feedback;
-
-    let textToCopy = `Onboarding Feedback for ${userName}\n\n`;
+    const feedbackText = createFeedbackText(feedback);
     
-    textToCopy += `${specialistTitle}\n`;
-    specialistAnswers.forEach(item => {
-      textToCopy += `Q: ${item.question}\n`;
-      textToCopy += `A: ${item.answer || 'No answer provided'}\n\n`;
-    });
-
-    textToCopy += `\n${newcomerTitle}\n`;
-    newcomerAnswers.forEach(item => {
-      textToCopy += `Q: ${item.question}\n`;
-      textToCopy += `A: ${item.answer || 'No answer provided'}\n\n`;
-    });
-
-    navigator.clipboard.writeText(textToCopy.trim())
+    copyToClipboard(feedbackText)
       .then(() => {
         setIsCopied(true);
         setTimeout(() => setIsCopied(false), 2000); // Reset after 2 seconds
@@ -41,7 +28,7 @@ function FeedbackDisplay({ feedback }) {
       <div className="relative mb-6 flex items-start justify-between">
         <h2 className="text-2xl font-bold text-center flex-grow pr-4">Onboarding Feedback for <span className="text-blue-600">{feedback.userName}</span></h2>
         <CopyButton
-          onClick={copyToClipboard}
+          onClick={handleCopyToClipboard}
           isCopied={isCopied}
           title={isCopied ? 'Copied!' : 'Copy to clipboard'}
         />
