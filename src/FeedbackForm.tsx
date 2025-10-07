@@ -363,7 +363,7 @@ function FeedbackForm({ onFeedback }: FeedbackFormProps) {
     <div>
       <form onSubmit={handleSubmit} className="mb-8 bg-white p-6 rounded-lg shadow-md">
         <div className="mb-4">
-          <label className="block text-gray-700 font-medium mb-2">Newcomer's feedback (.xlsx)</label>
+          <label className="block text-gray-700 font-medium mb-2">Feedback from the newcomer (.xlsx)</label>
           <input
             id="newcomer-feedback-file"
             type="file"
